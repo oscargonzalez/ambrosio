@@ -238,65 +238,63 @@
               
             });
 
-        $( document ).ready(function() {
-          // Handler for .ready() called.          
-            WebSocketTest();
-        });
+            var conection_status=0; // No conectado (1 si conectado)
+            var socket;
 
-        function WebSocketTest()
-        {
-          if ("WebSocket" in window)
-          {
-             //alert("WebSocket is supported by your Browser!");
+            function WebSocketTest()
+            {          
 
-              console.log("Conectando...");
-              var socket = io.connect('http://localhost:5001');
-              socket.on('arduino', function (data) {                
-                $('#socketret').html(String.fromCharCode(data.color));
-              });             
-             
-          }
-          else
-          {
-             // The browser doesn't support WebSocket
-             //alert("WebSocket NOT supported by your Browser!");
-          }
-        }
+              if ("WebSocket" in window)
+              {
+                   //alert("WebSocket is supported by your Browser!");
+                    socket = io.connect('http://localhost:5001');
 
+                    // Envía datos a Node para Arduino
+                    socket.on('arduino', function (data) {                
+                      if (conection_status == 1) 
+                      {
+                        $('#socketret').html(String.fromCharCode(data.color));                
+                      }
+                  });             
 
-        /*
-        // Websockets
-        function WebSocketTest()
-        {
-          if ("WebSocket" in window)
-          {
-             alert("WebSocket is supported by your Browser!");
-             // Let us open a web socket
-             var ws = new WebSocket("ws://localhost:9998/echo");
-             ws.onopen = function()
-             {
-                // Web Socket is connected, send data using send()
-                ws.send("Message to send");
-                alert("Message is sent...");
-             };
-             ws.onmessage = function (evt) 
-             { 
-                var received_msg = evt.data;
-                alert("Message is received...");
-             };
-             ws.onclose = function()
-             { 
-                // websocket is closed.
-                alert("Connection is closed..."); 
-             };
-          }
-          else
-          {
-             // The browser doesn't support WebSocket
-             alert("WebSocket NOT supported by your Browser!");
-          }
-        }
-      */
+                  // Node nodifica el estado de la conexión de Arduino
+                  socket.on('status', function (data) {                                    
+                    if (data.valor == 7) { conection_status=1; $('#socketret').html("CONECTADO"); }                    
+                    if (data.valor == 8) { conection_status=0; $('#socketret').html("NO CONECTADO"); }                    
+                  });                               
+                 
+              }
+              else
+              {
+                 // The browser doesn't support WebSocket
+                 alert("WebSocket NOT supported by your Browser!");
+              }
+
+            }
+
+            function comandos(data)
+            {
+              if (conection_status == 1)
+              {
+                socket.emit('control', { cmd: data });
+              }
+              else
+              {
+                alert("ERROR: El clasificador no está conectado!");
+              }
+
+            }      
+
+            $( document ).ready(function() {
+              // Handler for .ready() called.          
+                WebSocketTest();
+
+                // Comprobamos el estado de la conexión de arduino
+                // Se le pregunta a Node
+                socket.emit('conexion', { estado: 'check' });
+
+            });              
+
             </script>
 
     </head>
@@ -332,7 +330,7 @@
             <div class="panel-body text-center">
                 <!--<span><span class="glyphicon glyphicon-remove"></span> Not conected</span>-->
 
-                <span id="socketret"></span>
+                <span id="socketret">NO CONECTADO</span>
 
             </div>
           </div>          
@@ -342,9 +340,9 @@
               <h3 class="panel-title"><span class="glyphicon glyphicon-cog"></span> Control panel</h3>
             </div>
             <div class="panel-body text-center">
-              <a class="btn btn-success" href="/start"><span class="glyphicon glyphicon-play"></span></a>
-              <a class="btn btn-warning" href="/pause"><span class="glyphicon glyphicon-pause"></span></a>
-              <a class="btn btn-danger" href="/stop"><span class="glyphicon glyphicon-stop"></span></a>
+              <a class="btn btn-success" onClick="comandos(1);return false;" href="#start"><span class="glyphicon glyphicon-play"></span></a>
+              <a class="btn btn-warning" onClick="comandos(2);return false;" href="#pause"><span class="glyphicon glyphicon-pause"></span></a>
+              <a class="btn btn-danger"  onClick="comandos(3);return false;" href="#stop"><span class="glyphicon glyphicon-stop"></span></a>
             </div>
           </div>          
 

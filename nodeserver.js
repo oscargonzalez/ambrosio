@@ -12,6 +12,9 @@ var  CONTROL_START  = '1';
 var  CONTROL_PAUSE  = '2';
 var  CONTROL_STOP   = '3';
 
+var  WEB_STATUS_CONECTED      = '7';
+var  WEB_STATUS_NOTCONECTED   = '8';
+
 var app = require('express')()
   , server = require('http').createServer(app)
   , io = require('socket.io').listen(server)
@@ -32,27 +35,58 @@ app.use('/img', express.static(__dirname + '/img'));
 app.use('/fonts', express.static(__dirname + '/fonts'));
 app.use('/node_modules', express.static(__dirname + '/node_modules'));
 
+var arduino_conection_status = 0; // No conectado a Node
 var clients = [];
 var socketWeb;
 
-// Eventos de la web
-app.get('/start', function (req, res) {
-  //res.sendfile(__dirname + '/app.css');  
-  console.log('Start!');
-  clients[0].write(CONTROL_START);
+// Conexión websocket
+var app2 = require('http').createServer(handler)
+  , io = require('socket.io').listen(app2)
+  , fs = require('fs')
+
+app2.listen(WEBSOCKET_PORT);
+
+function handler (req, res) {
+  fs.readFile(__dirname + '/index.html',
+  function (err, data) {
+    if (err) {
+      res.writeHead(500);
+      return res.end('Error loading index.html');
+    }
+
+    res.writeHead(200);
+    res.end(data);
+  });
+}
+
+io.sockets.on('connection', function (socket) {
+
+  socketWeb = socket;  
+
+  // Recibimos ordenes de control (play, pause y stop) desde la web
+  socket.on('control', function (data) {
+    console.log("CONTROL: "+data.cmd);
+
+    clients[0].write(data.cmd.toString());
+
+  });
+
+  // La web pregunta por el estado de conexión del socket de arduino
+  socket.on('conexion', function (data) {
+    console.log("Get Arduino conection status: "+data.cmd);        
+    
+    if (arduino_conection_status == 1)
+    {
+      socketWeb.emit('status', { valor: WEB_STATUS_CONECTED });
+    }
+    else
+    {
+      socketWeb.emit('status', { valor: WEB_STATUS_NOTCONECTED });
+    }    
+
+  });  
+
 });
-
-app.get('/pause', function (req, res) {
-  //res.sendfile(__dirname + '/app.css');  
-  console.log('Pause!');
-  clients[0].write(CONTROL_PAUSE);
-});
-
-app.get('/stop', function (req, res) {  
-  console.log('Stop!');
-  clients[0].write(CONTROL_STOP);
-});  
-
 
 // ---------------------
 
@@ -77,8 +111,9 @@ net.createServer(function (socket) {
   // Put this new client in the list
   clients.push(socket);   
  
-  console.log("Conectado!");
-  socket.write("Hola Arduino!\n");
+  console.log("- Arduino Conectado!");    
+  arduino_conection_status = 1;
+  if (socketWeb) { socketWeb.emit('status', { valor: WEB_STATUS_CONECTED }); }
 
   // Incoming data from client
   socket.on('data', function (data) {
@@ -88,38 +123,12 @@ net.createServer(function (socket) {
 
   // Cliente desconectado
   socket.on('end', function () {
-    clients.splice(clients.indexOf(socket), 1);
-    console.log("Arduino desconectado!");
+    clients.splice(clients.indexOf(socket), 1);    
+    console.log("- Arduino desconectado!");
+    arduino_conection_status = 0;
+    socketWeb.emit('status', { valor: WEB_STATUS_NOTCONECTED });
   });  
 
   
 }).listen(ARDUINO_PORT);
 
-// ----------
-
-var app2 = require('http').createServer(handler)
-  , io = require('socket.io').listen(app2)
-  , fs = require('fs')
-
-app2.listen(WEBSOCKET_PORT);
-
-function handler (req, res) {
-  fs.readFile(__dirname + '/index.html',
-  function (err, data) {
-    if (err) {
-      res.writeHead(500);
-      return res.end('Error loading index.html');
-    }
-
-    res.writeHead(200);
-    res.end(data);
-  });
-}
-
-io.sockets.on('connection', function (socket) {
-  socketWeb = socket;
-  socket.emit('arduino', { color: 'rojo' });
-  socket.on('my other event', function (data) {
-    console.log(data);
-  });
-});
