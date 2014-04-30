@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Ambrosio</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <style>
+            body {
+                padding-top: 50px;
+                padding-bottom: 20px;
+            }
+        </style>
+        <link rel="stylesheet" href="css/bootstrap-theme.min.css">
+        <link rel="stylesheet" href="css/main.css">
+
+        <script src="js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+        
+        <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
+
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/highcharts/highcharts.js"></script>
+        <script src="js/highcharts/highcharts-more.js"></script>       
+        <script src="js/highcharts/modules/solid-gauge.src.js"></script> 
+
+        <script src="js/main.js"></script>        
+
+        <script type="text/javascript">
+
+            $(function () {
+              
+                var gaugeOptions = {
+              
+                  chart: {
+                      type: 'solidgauge'
+                  },
+                  
+                  title: null,
+                  
+                  pane: {
+                    center: ['50%', '85%'],
+                    size: '140%',
+                      startAngle: -90,
+                      endAngle: 90,
+                        background: {
+                            backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                            innerRadius: '60%',
+                            outerRadius: '100%',
+                            shape: 'arc'
+                        }
+                  },
+
+                  tooltip: {
+                    enabled: false
+                  },
+                     
+                  // the value axis
+                  yAxis: {
+                  stops: [
+                    [0.1, '#FF0000'], // green
+                        [0.5, '#FF0000'], // yellow
+                        [0.9, '#FF0000'] // red
+                  ],
+                  lineWidth: 0,
+                        minorTickInterval: null,
+                        tickPixelInterval: 400,
+                        tickWidth: 0,
+                      title: {
+                            y: -70
+                      },
+                        labels: {
+                            y: 16
+                        }        
+                  },
+                    
+                    plotOptions: {
+                        solidgauge: {
+                            dataLabels: {
+                                y: -30,
+                                borderWidth: 0,
+                                useHTML: true
+                            }
+                        }
+                    }
+                };
+                
+                // The speed gauge
+                $('#container-speed').highcharts(Highcharts.merge(gaugeOptions, {
+                    yAxis: {
+                      min: 0,
+                      max: 200,
+                      title: {
+                          text: 'Speed'
+                      },
+                  stops: [
+                    [0.1, '#0000FF'], // green
+                        [0.5, '#FF0000'], // yellow
+                        [0.9, '#FF0000'] // red
+                  ],                             
+                  },
+
+                  credits: {
+                    enabled: false
+                  },
+              
+                  series: [{
+                      name: 'Speed',
+                      data: [80],
+                      dataLabels: {
+                        format: '<div style="text-align:center"><span style="font-size:25px;color:' + 
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' + 
+                                '<span style="font-size:12px;color:silver">km/h</span></div>'
+                      },
+                      tooltip: {
+                          valueSuffix: ' km/h'
+                      }
+                  }]
+              
+              }));
+                
+                // The RPM gauge
+                $('#container-rpm').highcharts(Highcharts.merge(gaugeOptions, {
+                    yAxis: {
+                      min: 0,
+                      max: 5,
+                      title: {
+                          text: 'RPM'
+                      }       
+                  },
+              
+                  series: [{
+                      name: 'RPM',
+                      data: [1],
+                      dataLabels: {
+                        format: '<div style="text-align:center"><span style="font-size:25px;color:' + 
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' + 
+                                '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                      },
+                      tooltip: {
+                          valueSuffix: ' revolutions/min'
+                      }      
+                  }]
+              
+              }));
+                                           
+                // Bring life to the dials
+                setInterval(function () {
+                  // Speed
+                    var chart = $('#container-speed').highcharts();
+                    if (chart) {
+
+                        var point = chart.series[0].points[0],
+                            newVal,
+                            inc = Math.round((Math.random() - 0.5) * 100);
+                        
+                        newVal = point.y + inc;
+                        if (newVal < 0 || newVal > 200) {
+                            newVal = point.y - inc;
+                        }
+                        
+                        point.update(newVal);
+                    }
+
+                    // RPM
+                    chart = $('#container-rpm').highcharts();
+                    if (chart) {
+                        var point = chart.series[0].points[0],
+                            newVal,
+                            inc = Math.random() - 0.5;
+                        
+                        newVal = point.y + inc;
+                        if (newVal < 0 || newVal > 5) {
+                            newVal = point.y - inc;
+                        }
+                        
+                        point.update(newVal);
+                    }
+                }, 100);  
+                
+              
+            });
+
+
+        /*
+        // Websockets
+        function WebSocketTest()
+        {
+          if ("WebSocket" in window)
+          {
+             alert("WebSocket is supported by your Browser!");
+             // Let us open a web socket
+             var ws = new WebSocket("ws://localhost:9998/echo");
+             ws.onopen = function()
+             {
+                // Web Socket is connected, send data using send()
+                ws.send("Message to send");
+                alert("Message is sent...");
+             };
+             ws.onmessage = function (evt) 
+             { 
+                var received_msg = evt.data;
+                alert("Message is received...");
+             };
+             ws.onclose = function()
+             { 
+                // websocket is closed.
+                alert("Connection is closed..."); 
+             };
+          }
+          else
+          {
+             // The browser doesn't support WebSocket
+             alert("WebSocket NOT supported by your Browser!");
+          }
+        }
+      */
+            </script>
+
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Ambrosio</a>
+          <!-- Botones de navegación -->
+          <ul class="nav navbar-nav navbar-right">
+            <li><button type="button" class="btn btn-success navbar-btn"><span class="glyphicon glyphicon-play"></span> Iniciar</button>&nbsp;</li>
+            <li><button type="button" class="btn btn-info navbar-btn"><span class="glyphicon glyphicon-pause"></span> Pausa</button>&nbsp;</li>
+            <li><button type="button" class="btn btn-danger navbar-btn"><span class="glyphicon glyphicon-stop"></span> Detener</button>&nbsp;</li>
+          </ul>                            
+        </div>
+      </div>
+    </div>
+
+    <!-- Main jumbotron for a primary marketing message or call to action -->
+    <!--
+    <div class="jumbotron">
+      <div class="container">
+        <h1>node</h1>
+
+        <div style="width: 600px; height: 400px; margin: 0 auto">
+          <div id="container-speed" style="width: 300px; height: 200px; float: left"></div>
+          <div id="container-rpm" style="width: 300px; height: 200px; float: left"></div>
+        </div>        
+
+      </div>
+    </div>
+    -->
+    <div class="container">
+      <!-- Example row of columns -->
+      <div class="row">
+        <div class="col-md-12">            
+        
+          <div style="width: 600px; height: 400px; margin: 0 auto">
+            <div id="container-speed" style="width: 300px; height: 200px; float: left"></div>
+            <div id="container-rpm" style="width: 300px; height: 200px; float: left"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <hr>
+
+      <footer>
+        <p>&copy; Oscar Gonzalez 2014</p>
+      </footer>
+    </div> 
+    <!-- /container -->        
+    </body>
+</html>
