@@ -96,7 +96,7 @@
                 $('#container-red').highcharts(Highcharts.merge(gaugeOptions, {
                     yAxis: {
                       min: 0,
-                      max: 200,
+                      max: 50,
                       title: {
                           text: ''
                       },
@@ -113,14 +113,11 @@
               
                   series: [{
                       name: 'Rojo',
-                      data: [80],
+                      data: [0],
                       dataLabels: {
                         format: '<div style="text-align:center"><span style="font-size:25px;color:' + 
                                 ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' + 
                                 '<span style="font-size:30px;color:silver">Red</span></div>'
-                      },
-                      tooltip: {
-                          valueSuffix: ' km/h'
                       }
                   }]
               
@@ -130,7 +127,7 @@
                 $('#container-blue').highcharts(Highcharts.merge(gaugeOptions, {
                     yAxis: {
                       min: 0,
-                      max: 5,
+                      max: 50,
                       title: {
                           text: ''
                       }       
@@ -138,10 +135,10 @@
               
                   series: [{
                       name: 'Blue',
-                      data: [1],
+                      data: [0],
                       dataLabels: {
                         format: '<div style="text-align:center"><span style="font-size:25px;color:' + 
-                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' + 
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' + 
                                 '<span style="font-size:30px;color:silver">Blue</span></div>'
                       },
                       tooltip: {
@@ -155,7 +152,7 @@
               $('#container-white').highcharts(Highcharts.merge(gaugeOptions, {
                   yAxis: {
                     min: 0,
-                    max: 200,
+                    max: 50,
                     title: {
                         text: ''
                     },
@@ -171,8 +168,8 @@
                 },
             
                 series: [{
-                    name: 'Rojo',
-                    data: [80],
+                    name: 'Blanco',
+                    data: [0],
                     dataLabels: {
                       format: '<div style="text-align:center"><span style="font-size:25px;color:' + 
                               ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' + 
@@ -183,84 +180,51 @@
                     }
                 }]
             
-            }));                
-                                           
-                // Bring life to the dials
-                setInterval(function () {
-                    // Red
-                    var chart = $('#container-red').highcharts();
-                    if (chart) {
-
-                        var point = chart.series[0].points[0],
-                            newVal,
-                            inc = Math.round((Math.random() - 0.5) * 100);
-                        
-                        newVal = point.y + inc;
-                        if (newVal < 0 || newVal > 200) {
-                            newVal = point.y - inc;
-                        }
-                        
-                        point.update(newVal);
-                    }
-
-                    // Blue
-                    chart = $('#container-blue').highcharts();
-                    if (chart) {
-                        var point = chart.series[0].points[0],
-                            newVal,
-                            inc = Math.random() - 0.5;
-                        
-                        newVal = point.y + inc;
-                        if (newVal < 0 || newVal > 5) {
-                            newVal = point.y - inc;
-                        }
-                        
-                        point.update(newVal);
-                    }
-
-                    // White
-                    chart = $('#container-white').highcharts();
-                    if (chart) {
-                        var point = chart.series[0].points[0],
-                            newVal,
-                            inc = Math.round((Math.random() - 0.5) * 100);
-                        
-                        newVal = point.y + inc;
-                        if (newVal < 0 || newVal > 200) {
-                            newVal = point.y - inc;
-                        }
-                        
-                        point.update(newVal);
-                    }
-
-                }, 100);  
-                
+            }));     
               
             });
 
             var conection_status=0; // No conectado (1 si conectado)
-            var socket;
+            var socket;            
 
-            function WebSocketTest()
+            function InitWebSocket()
             {          
 
               if ("WebSocket" in window)
               {
                    //alert("WebSocket is supported by your Browser!");
-                    socket = io.connect('http://localhost:5001');
+                    socket = io.connect('http://192.168.0.3:5001');
 
                     // Envía datos a Node para Arduino
                     socket.on('arduino', function (data) {                
                       if (conection_status == 1) 
-                      {
-                        $('#socketret').html(String.fromCharCode(data.color));                
+                      {                        
+                        if (String.fromCharCode(data.color) != '9')                        
+                        {
+                          AddColor(String.fromCharCode(data.color), 1);
+                        }
+                        else
+                        {
+                          // Es 9: El proceso ha terminado
+                          $('#modalFinalizado').modal('show');
+                        }
                       }
                   });             
 
                   // Node nodifica el estado de la conexión de Arduino
                   socket.on('status', function (data) {                                    
+
                     if (data.valor == 7) { conection_status=1; $('#socketret').html("CONECTADO"); }                    
-                    if (data.valor == 8) { conection_status=0; $('#socketret').html("NO CONECTADO"); }                    
+                    if (data.valor == 8) { conection_status=0; $('#socketret').html("NO CONECTADO"); }                                        
+
+                    // Inicializamos las graficas con los valores actuales que tiene Node                    
+                    ResetChart(4);
+                    ResetChart(5);
+                    ResetChart(6);
+                    AddColor(4, data.rojo);
+                    AddColor(5, data.azul);
+                    AddColor(6, data.blanco);
+
                   });                               
                  
               }
@@ -280,14 +244,56 @@
               }
               else
               {
-                alert("ERROR: El clasificador no está conectado!");
+                //alert("ERROR: El clasificador no está conectado!");
+                $('#modalErrorDesconectado').modal('show');
               }
 
-            }      
+            }    
+
+            // Añade 1 al color correspondiente
+            // 4: Rojo, 5: Azul, 6 Blanco
+            function AddColor(color, valor) 
+            {
+
+                if (color == 4) { var chart = $('#container-red').highcharts(); }
+                if (color == 5) { var chart = $('#container-blue').highcharts(); }
+                if (color == 6) { var chart = $('#container-white').highcharts(); }
+
+                if (chart) {
+                    
+                    var point = chart.series[0].points[0],
+                        newVal,
+                        inc = valor;                    
+                    newVal = point.y + inc;                    
+                    point.update(newVal);
+                    
+                }
+
+                if (valor == 0) { ResetChart(color); }
+
+             }              
+
+            function ResetChart(color) 
+            {
+
+                if (color == 4) { var chart = $('#container-red').highcharts(); }
+                if (color == 5) { var chart = $('#container-blue').highcharts(); }
+                if (color == 6) { var chart = $('#container-white').highcharts(); }
+                    
+                if (chart) {
+
+                    var point = chart.series[0].points[0],
+                        newVal,
+                        inc = 1;                    
+                    newVal = 0;
+                    point.update(newVal);
+                }    
+
+             }                           
 
             $( document ).ready(function() {
               // Handler for .ready() called.          
-                WebSocketTest();
+                InitWebSocket();
 
                 // Comprobamos el estado de la conexión de arduino
                 // Se le pregunta a Node
@@ -316,6 +322,43 @@
       </div>
     </div>
 
+    <!-- Modal No conectado-->
+    <div class="modal fade" id="modalErrorDesconectado" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title" id="myModalLabel"><span class="glyphicon glyphicon-remove"></span> Error</h4>
+          </div>
+          <div class="modal-body">
+            El clasificador no está conectado. Compruebe la máquina!
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-success" data-dismiss="modal">Close</button>            
+          </div>
+        </div>
+      </div>
+    </div>  
+
+    <!-- Modal Proceso finalizado -->
+    <div class="modal fade" id="modalFinalizado" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title" id="myModalLabel"><span class="glyphicon glyphicon-ok"></span> Clasificación finalizada</h4>
+          </div>
+          <div class="modal-body">
+            <h2><span class="glyphicon glyphicon-star-empty"></span> La clasificación ha terminado!</h2>
+            Si deseas continuar clasificando a partir de los valores actuales, pulse el botón PLAY. Si desea reiniciar los valores, pulse STOP.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-success" data-dismiss="modal">Close</button>            
+          </div>
+        </div>
+      </div>
+    </div>      
+
     <!-- Main jumbotron for a primary marketing message or call to action -->
     
     <div class="jumbotron">
@@ -340,9 +383,9 @@
               <h3 class="panel-title"><span class="glyphicon glyphicon-cog"></span> Control panel</h3>
             </div>
             <div class="panel-body text-center">
-              <a class="btn btn-success" onClick="comandos(1);return false;" href="#start"><span class="glyphicon glyphicon-play"></span></a>
-              <a class="btn btn-warning" onClick="comandos(2);return false;" href="#pause"><span class="glyphicon glyphicon-pause"></span></a>
-              <a class="btn btn-danger"  onClick="comandos(3);return false;" href="#stop"><span class="glyphicon glyphicon-stop"></span></a>
+              <a class="btn btn-success btn-lg" onClick="comandos(1); return false;" href="#start"><span class="glyphicon glyphicon-play"></span></a>
+              <a class="btn btn-warning btn-lg" onClick="comandos(2); return false;" href="#pause"><span class="glyphicon glyphicon-pause"></span></a>
+              <a class="btn btn-danger btn-lg"  onClick="comandos(3); return false;" href="#stop"><span class="glyphicon glyphicon-stop"></span></a>
             </div>
           </div>          
 

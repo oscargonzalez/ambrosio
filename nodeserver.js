@@ -11,9 +11,18 @@ var  WEBSOCKET_PORT = 5001; // Web (websockets)
 var  CONTROL_START  = '1';
 var  CONTROL_PAUSE  = '2';
 var  CONTROL_STOP   = '3';
+var  COLOR_ROJO     = '4';
+var  COLOR_AZUL     = '5';
+var  COLOR_BLANCO   = '6';
+var  CLASIF_COMPLETADO   = '9';
 
 var  WEB_STATUS_CONECTED      = '7';
 var  WEB_STATUS_NOTCONECTED   = '8';
+
+// Total de clasificación
+var total_rojo   = 0;
+var total_azul   = 0;
+var total_blanco = 0;
 
 var app = require('express')()
   , server = require('http').createServer(app)
@@ -34,6 +43,16 @@ app.use('/js', express.static(__dirname + '/js'));
 app.use('/img', express.static(__dirname + '/img'));
 app.use('/fonts', express.static(__dirname + '/fonts'));
 app.use('/node_modules', express.static(__dirname + '/node_modules'));
+
+// Reinicia los contadores de colores
+function InitContadores()
+{
+  total_rojo   = 0;
+  total_azul   = 0;
+  total_blanco = 0;  
+}
+
+InitContadores();
 
 var arduino_conection_status = 0; // No conectado a Node
 var clients = [];
@@ -67,21 +86,32 @@ io.sockets.on('connection', function (socket) {
   socket.on('control', function (data) {
     console.log("CONTROL: "+data.cmd);
 
+    // Lo envía al Arduino
     clients[0].write(data.cmd.toString());
+
+    if (data.cmd == 3)
+    {
+      // Paramos la mñaquina y reiniciamos contadores
+      console.log('Parar máquina y reiniciar');
+      InitContadores();
+      socketWeb.emit('status', { valor: WEB_STATUS_CONECTED, rojo: 0, azul: 0, blanco: 0 });
+    }
 
   });
 
   // La web pregunta por el estado de conexión del socket de arduino
   socket.on('conexion', function (data) {
-    console.log("Get Arduino conection status: "+data.cmd);        
+    console.log("Get Arduino conection status");  
+
+    console.log('Websocket conectado')      
     
     if (arduino_conection_status == 1)
     {
-      socketWeb.emit('status', { valor: WEB_STATUS_CONECTED });
+      socketWeb.emit('status', { valor: WEB_STATUS_CONECTED, rojo: total_rojo, azul: total_azul, blanco: total_blanco });
     }
     else
     {
-      socketWeb.emit('status', { valor: WEB_STATUS_NOTCONECTED });
+      socketWeb.emit('status', { valor: WEB_STATUS_NOTCONECTED, rojo: total_rojo, azul: total_azul, blanco: total_blanco });
     }    
 
   });  
@@ -95,6 +125,7 @@ io.sockets.on('connection', function (socket) {
     4 rojo
     5 azul
     6 blanco
+    9 Proceso completo (fin)
 
   Enviar a Arduino:
     1: Start
@@ -113,12 +144,18 @@ net.createServer(function (socket) {
  
   console.log("- Arduino Conectado!");    
   arduino_conection_status = 1;
-  if (socketWeb) { socketWeb.emit('status', { valor: WEB_STATUS_CONECTED }); }
+  if (socketWeb) { socketWeb.emit('status', { valor: WEB_STATUS_CONECTED, rojo: total_rojo, azul: total_azul, blanco: total_blanco }); }
 
   // Incoming data from client
   socket.on('data', function (data) {
     console.log("data: "+data);
+
+    if (data == COLOR_ROJO) total_rojo++;
+    if (data == COLOR_AZUL) total_azul++;
+    if (data == COLOR_BLANCO) total_blanco++;
+
     socketWeb.emit('arduino', { color: data });
+
   });  
 
   // Cliente desconectado
@@ -126,7 +163,9 @@ net.createServer(function (socket) {
     clients.splice(clients.indexOf(socket), 1);    
     console.log("- Arduino desconectado!");
     arduino_conection_status = 0;
-    socketWeb.emit('status', { valor: WEB_STATUS_NOTCONECTED });
+
+    socketWeb.emit('status', { valor: WEB_STATUS_NOTCONECTED, rojo: total_rojo, azul: total_azul, blanco: total_blanco });    
+
   });  
 
   
