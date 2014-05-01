@@ -117,7 +117,7 @@
                       dataLabels: {
                         format: '<div style="text-align:center"><span style="font-size:25px;color:' + 
                                 ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' + 
-                                '<span style="font-size:30px;color:silver">Red</span></div>'
+                                '<span style="font-size:30px;color:silver">Rojo</span></div>'
                       }
                   }]
               
@@ -139,7 +139,7 @@
                       dataLabels: {
                         format: '<div style="text-align:center"><span style="font-size:25px;color:' + 
                                 ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' + 
-                                '<span style="font-size:30px;color:silver">Blue</span></div>'
+                                '<span style="font-size:30px;color:silver">Azul</span></div>'
                       },
                       tooltip: {
                           valueSuffix: ' Blue'
@@ -173,7 +173,7 @@
                     dataLabels: {
                       format: '<div style="text-align:center"><span style="font-size:25px;color:' + 
                               ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' + 
-                              '<span style="font-size:30px;color:silver">White</span></div>'
+                              '<span style="font-size:30px;color:silver">Blanco</span></div>'
                     },
                     tooltip: {
                         valueSuffix: ' km/h'
@@ -184,8 +184,10 @@
               
             });
 
-            var conection_status=0; // No conectado (1 si conectado)
-            var socket;            
+            var conection_st
+            var total_rojo=0;        
+            var total_azul=0;        
+            var total_blanco=0;    
 
             function InitWebSocket()
             {          
@@ -205,8 +207,11 @@
                         }
                         else
                         {
-                          // Es 9: El proceso ha terminado
+                          // Es 9: El proceso ha terminado                              
+                          var suma = total_rojo+total_azul+total_blanco;
+                          $('#contadorResultado').html( suma );
                           $('#modalFinalizado').modal('show');
+
                         }
                       }
                   });             
@@ -225,6 +230,12 @@
                     AddColor(5, data.azul);
                     AddColor(6, data.blanco);
 
+                    // Se guarda para el mensaje final
+                    total_rojo    = data.rojo;        
+                    total_azul    = data.azul;        
+                    total_blanco  = data.blanco;        
+
+
                   });                               
                  
               }
@@ -241,10 +252,12 @@
               if (conection_status == 1)
               {
                 socket.emit('control', { cmd: data });
+                InitTime();
               }
               else
               {
-                //alert("ERROR: El clasificador no está conectado!");
+                // ERROR: El clasificador no está conectado!
+                socket.emit('conexion', { estado: 'check' });
                 $('#modalErrorDesconectado').modal('show');
               }
 
@@ -255,9 +268,9 @@
             function AddColor(color, valor) 
             {
 
-                if (color == 4) { var chart = $('#container-red').highcharts(); }
-                if (color == 5) { var chart = $('#container-blue').highcharts(); }
-                if (color == 6) { var chart = $('#container-white').highcharts(); }
+                if (color == 4) { var chart = $('#container-red').highcharts(); total_rojo++; }
+                if (color == 5) { var chart = $('#container-blue').highcharts(); total_azul++; }
+                if (color == 6) { var chart = $('#container-white').highcharts(); total_blanco++; }
 
                 if (chart) {
                     
@@ -297,9 +310,9 @@
 
                 // Comprobamos el estado de la conexión de arduino
                 // Se le pregunta a Node
-                socket.emit('conexion', { estado: 'check' });
+                socket.emit('conexion', { estado: 'check' });                
 
-            });              
+            });       
 
             </script>
 
@@ -334,7 +347,7 @@
             El clasificador no está conectado. Compruebe la máquina!
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-success" data-dismiss="modal">Close</button>            
+            <button type="button" class="btn btn-success" data-dismiss="modal">Cerrar</button>            
           </div>
         </div>
       </div>
@@ -350,10 +363,12 @@
           </div>
           <div class="modal-body">
             <h2><span class="glyphicon glyphicon-star-empty"></span> La clasificación ha terminado!</h2>
-            Si deseas continuar clasificando a partir de los valores actuales, pulse el botón PLAY. Si desea reiniciar los valores, pulse STOP.
+            Si deseas continuar clasificando a partir de los valores actuales, pulse el botón PLAY. Si desea reiniciar los valores, pulse STOP.<br>
+            <h3>Resultado:</h3>
+            Se ha clasificado un total de <strong><span id="contadorResultado"></span></strong> elementos
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-success" data-dismiss="modal">Close</button>            
+            <button type="button" class="btn btn-success" data-dismiss="modal">Cerrar</button>            
           </div>
         </div>
       </div>
@@ -368,7 +383,7 @@
 
           <div class="panel panel-primary">
             <div class="panel-heading">
-              <h3 class="panel-title"><span class="glyphicon glyphicon-random"></span> Sorter status</h3>
+              <h3 class="panel-title"><span class="glyphicon glyphicon-random"></span> Estado</h3>
             </div>
             <div class="panel-body text-center">
                 <!--<span><span class="glyphicon glyphicon-remove"></span> Not conected</span>-->
@@ -380,7 +395,7 @@
 
           <div class="panel panel-primary">
             <div class="panel-heading">
-              <h3 class="panel-title"><span class="glyphicon glyphicon-cog"></span> Control panel</h3>
+              <h3 class="panel-title"><span class="glyphicon glyphicon-cog"></span> Controles</h3>
             </div>
             <div class="panel-body text-center">
               <a class="btn btn-success btn-lg" onClick="comandos(1); return false;" href="#start"><span class="glyphicon glyphicon-play"></span></a>
