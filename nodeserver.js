@@ -158,6 +158,15 @@ net.createServer(function (socket) {
 
   });  
 
+  // Control de error de socket
+  socket.on('error', function (data) {
+    console.log("Arduino, error de conexioón: "+data);
+    arduino_conection_status = 0;
+    // Notificamos la web
+    socketWeb.emit('status', { valor: WEB_STATUS_NOTCONECTED, rojo: total_rojo, azul: total_azul, blanco: total_blanco });    
+
+  });
+
   // Cliente desconectado
   socket.on('end', function () {
     clients.splice(clients.indexOf(socket), 1);    
