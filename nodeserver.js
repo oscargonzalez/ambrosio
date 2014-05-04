@@ -151,11 +151,11 @@ net.createServer(function (socket) {
     console.log("Incoming data ("+data.length+" bytes): "+data);
 
     for (var i = 0; i < data.length; i++) {
-        console.log('Data ('+i+'): '+data.charAt(i));
+        console.log('Data ('+i+'): '+data[i]);
 
-        if (data.charAt(i) == COLOR_ROJO) total_rojo++;
-        if (data.charAt(i) == COLOR_AZUL) total_azul++;
-        if (data.charAt(i) == COLOR_BLANCO) total_blanco++;
+        if (data[i] == COLOR_ROJO) total_rojo++;
+        if (data[i] == COLOR_AZUL) total_azul++;
+        if (data[i] == COLOR_BLANCO) total_blanco++;
 
         socketWeb.emit('arduino', { color: data.charAt(i) });
 
