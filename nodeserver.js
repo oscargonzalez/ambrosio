@@ -157,7 +157,7 @@ net.createServer(function (socket) {
         if (data[i] == COLOR_AZUL) total_azul++;
         if (data[i] == COLOR_BLANCO) total_blanco++;
 
-        socketWeb.emit('arduino', { color: data.charAt(i) });
+        socketWeb.emit('arduino', { color: data[i] });
 
     }
 
