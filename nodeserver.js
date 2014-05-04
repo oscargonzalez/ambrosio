@@ -148,13 +148,18 @@ net.createServer(function (socket) {
 
   // Incoming data from client
   socket.on('data', function (data) {
-    console.log("data: "+data);
+    console.log("Incoming data ("+data.length+" bytes): "+data);
 
-    if (data == COLOR_ROJO) total_rojo++;
-    if (data == COLOR_AZUL) total_azul++;
-    if (data == COLOR_BLANCO) total_blanco++;
+    for (var i = 0; i < data.length; i++) {
+        console.log('Data ('+i+'): '+s.charAt(i));
 
-    socketWeb.emit('arduino', { color: data });
+        if (data == COLOR_ROJO) total_rojo++;
+        if (data == COLOR_AZUL) total_azul++;
+        if (data == COLOR_BLANCO) total_blanco++;
+
+        socketWeb.emit('arduino', { color: data });
+
+    }
 
   });  
 
