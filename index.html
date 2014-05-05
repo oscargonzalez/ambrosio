@@ -130,7 +130,12 @@
                       max: 50,
                       title: {
                           text: ''
-                      }       
+                      },
+                stops: [
+                  [0.1, '#0000FF'], // green
+                      [0.5, '#0000FF'], // yellow
+                      [0.9, '#0000FF'] // red
+                ],                                                   
                   },
               
                   series: [{
@@ -157,9 +162,9 @@
                         text: ''
                     },
                 stops: [
-                  [0.1, '#FF0000'], // green
-                      [0.5, '#FF0000'], // yellow
-                      [0.9, '#FF0000'] // red
+                  [0.1, '#00FF00'], // green
+                      [0.5, '#00FF00'], // yellow
+                      [0.9, '#00FF00'] // red
                 ],                             
                 },
 
@@ -219,8 +224,20 @@
                   // Node nodifica el estado de la conexión de Arduino
                   socket.on('status', function (data) {                                    
 
-                    if (data.valor == 7) { conection_status=1; $('#socketret').html("CONECTADO"); }                    
-                    if (data.valor == 8) { conection_status=0; $('#socketret').html("NO CONECTADO"); }                                        
+                    if (data.valor == 7) { 
+                      conection_status=1; 
+                      $('#socketret').html("CONECTADO"); 
+                      $('#socketret').removeClass();
+                      $('#socketret').addClass('bg-success');
+
+                    }
+
+                    if (data.valor == 8) { 
+                      conection_status=0; 
+                      $('#socketret').html("NO CONECTADO"); 
+                      $('#socketret').removeClass();
+                      $('#socketret').addClass('bg-danger');
+                    }
 
                     // Inicializamos las graficas con los valores actuales que tiene Node                    
                     ResetChart(4);
@@ -387,7 +404,7 @@
             <div class="panel-body text-center">
                 <!--<span><span class="glyphicon glyphicon-remove"></span> Not conected</span>-->
 
-                <span id="socketret">NO CONECTADO</span>
+                <p id="socketret">NO CONECTADO</p>
 
             </div>
           </div>          
@@ -397,9 +414,9 @@
               <h3 class="panel-title"><span class="glyphicon glyphicon-cog"></span> Controles</h3>
             </div>
             <div class="panel-body text-center">
-              <a class="btn btn-success btn-lg" onClick="comandos(1); return false;" href="#start"><span class="glyphicon glyphicon-play"></span></a>
-              <a class="btn btn-warning btn-lg" onClick="comandos(2); return false;" href="#pause"><span class="glyphicon glyphicon-pause"></span></a>
-              <a class="btn btn-danger btn-lg"  onClick="comandos(3); return false;" href="#stop"><span class="glyphicon glyphicon-stop"></span></a>
+              <p><a class="btn btn-success btn-lg" onClick="comandos(1); return false;" href="#start"><span class="glyphicon glyphicon-play"> Iniciar</span></a></p>
+              <p><a class="btn btn-warning btn-lg" onClick="comandos(2); return false;" href="#pause"><span class="glyphicon glyphicon-pause"> Pausa</span></a></p>
+              <p><a class="btn btn-danger btn-lg"  onClick="comandos(3); return false;" href="#stop"><span class="glyphicon glyphicon-stop"></span> Detener</a></p>
             </div>
           </div>          
 
